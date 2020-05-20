@@ -16,7 +16,9 @@ app.post("/webhook", async (req, res, next) => {
 
   try {
     const city = req.body.queryResult.parameters["geo-city"];
-    const result = await getWeather(city);
+    const result =
+      (await getWeather(city)) ||
+      `Hey, check the city name you wrote, maybe it's a typo!`;
     console.log("Response to dialogflow");
 
     const toPlatforms = {
@@ -61,10 +63,12 @@ const getWeather = async (city) => {
 
   try {
     const res = await axios.get(api);
-    if (res.data.message && res.data.message === "city not found") {
+    if (res.data.cod.toString() === "200") {
+      result = `It's ${res.data.main.temp} degrees with ${res.data.weather[0].description} in ${res.data.name}`;
+    } else if (res.data.cod.toString() !== "200" && res.data.message) {
       result = "Unable to get weather" + res.data.message;
     } else {
-      result = `It's ${res.data.main.temp} degrees with ${res.data.weather[0].description} in ${res.data.name}`;
+      result = "Something went wrong with weather api request!";
     }
     return result;
   } catch (err) {
